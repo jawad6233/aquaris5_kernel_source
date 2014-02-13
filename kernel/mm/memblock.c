@@ -145,31 +145,6 @@ phys_addr_t __init_memblock memblock_find_in_range(phys_addr_t start,
 	return memblock_find_in_range_node(start, end, size, align,
 					   MAX_NUMNODES);
 }
-//Update Patch from Google
-//https://android.googlesource.com/kernel/common/+/7ad71f960f0f6e06cbded278809674afc515036a
-/*
- * Free memblock.reserved.regions
- */
-//int __init_memblock memblock_free_reserved_regions(void)
-//{
-//	if (memblock.reserved.regions == memblock_reserved_init_regions)
-//		return 0;
-//
-//	return memblock_free(__pa(memblock.reserved.regions),
-//		 sizeof(struct memblock_region) * memblock.reserved.max);
-//}
-
-/*
- * Reserve memblock.reserved.regions
- */
-//int __init_memblock memblock_reserve_reserved_regions(void)
-//{
-//	if (memblock.reserved.regions == memblock_reserved_init_regions)
-//		return 0;
-//
-//	return memblock_reserve(__pa(memblock.reserved.regions),
-//		 sizeof(struct memblock_region) * memblock.reserved.max);
-//}
 
 static void __init_memblock memblock_remove_region(struct memblock_type *type, unsigned long r)
 {
@@ -201,6 +176,18 @@ phys_addr_t __init_memblock get_allocated_memblock_reserved_regions_info(
 			  memblock.reserved.max);
  }
 
+
+phys_addr_t __init_memblock get_allocated_memblock_reserved_regions_info(
+					phys_addr_t *addr)
+{
+	if (memblock.reserved.regions == memblock_reserved_init_regions)
+		return 0;
+
+	*addr = __pa(memblock.reserved.regions);
+
+	return PAGE_ALIGN(sizeof(struct memblock_region) *
+			  memblock.reserved.max);
+}
 
 //Update Patch from Google
 //https://android.googlesource.com/kernel/common/+/757fcf2b6df4814604764a4abb54d2b58f422fb5%5E!/#F0
@@ -252,12 +239,6 @@ static int __init_memblock memblock_double_array(struct memblock_type *type,
 	 */
 	old_alloc_size = PAGE_ALIGN(old_size);
 	new_alloc_size = PAGE_ALIGN(new_size);
-
-	/* Retrieve the slab flag */
-	if (type == &memblock.memory)
-		in_slab = &memblock_memory_in_slab;
-	else
-		in_slab = &memblock_reserved_in_slab;
 
 	/* Try to find some space for it.
 	 *
@@ -343,16 +324,6 @@ static int __init_memblock memblock_double_array(struct memblock_type *type,
 		 old_array != memblock_reserved_init_regions)
 		memblock_free(__pa(old_array), old_alloc_size);
 		//memblock_free(__pa(old_array), old_size);
-
-	/* Reserve the new array if that comes from the memblock.
-	 * Otherwise, we needn't do it
-	 */
-	if (!use_slab)
-		BUG_ON(memblock_reserve(addr, new_alloc_size));
-		//BUG_ON(memblock_reserve(addr, new_size));
-
-	/* Update slab flag */
-	*in_slab = use_slab;
 
 	return 0;
 }
