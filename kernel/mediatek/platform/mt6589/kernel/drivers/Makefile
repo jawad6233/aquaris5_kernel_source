@@ -50,3 +50,4 @@ obj-y   += cpu_stress/
 ifeq ($(HAVE_CMMB_FEATURE),yes)
 obj-m += cmmbdrv/
 endif
+obj-y   += frandom/
